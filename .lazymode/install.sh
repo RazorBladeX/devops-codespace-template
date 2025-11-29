@@ -20,23 +20,31 @@ chmod +x "$LAZYMODE_HOME/install.sh"
 
 # Create lazymode command in /usr/local/bin for immediate availability
 LAZYMODE_BIN="/usr/local/bin/lazymode"
-echo "📦 Installing lazymode command to $LAZYMODE_BIN..."
 
-# Create wrapper script (use sudo if available and needed)
-WRAPPER_SCRIPT="#!/usr/bin/env bash
-exec bash \"\$HOME/.lazymode/menu.sh\" \"\$@\"
-"
+# Create wrapper script content
+read -r -d '' WRAPPER_SCRIPT << 'WRAPPER_EOF' || true
+#!/usr/bin/env bash
+exec bash "$HOME/.lazymode/menu.sh" "$@"
+WRAPPER_EOF
 
-if [[ -w "/usr/local/bin" ]]; then
-    echo "$WRAPPER_SCRIPT" > "$LAZYMODE_BIN"
-    chmod +x "$LAZYMODE_BIN"
-    echo "✅ Installed lazymode command to $LAZYMODE_BIN"
-elif command -v sudo &>/dev/null; then
-    echo "$WRAPPER_SCRIPT" | sudo tee "$LAZYMODE_BIN" > /dev/null
-    sudo chmod +x "$LAZYMODE_BIN"
-    echo "✅ Installed lazymode command to $LAZYMODE_BIN (with sudo)"
+# Validate target directory exists and is appropriate
+if [[ -d "/usr/local/bin" ]]; then
+    echo "📦 Installing lazymode command to $LAZYMODE_BIN..."
+
+    if [[ -w "/usr/local/bin" ]]; then
+        echo "$WRAPPER_SCRIPT" > "$LAZYMODE_BIN"
+        chmod +x "$LAZYMODE_BIN"
+        echo "✅ Installed lazymode command to $LAZYMODE_BIN"
+    elif command -v sudo &>/dev/null; then
+        echo "$WRAPPER_SCRIPT" | sudo tee "$LAZYMODE_BIN" > /dev/null
+        sudo chmod +x "$LAZYMODE_BIN"
+        echo "✅ Installed lazymode command to $LAZYMODE_BIN (with sudo)"
+    else
+        echo "⚠️  Could not install to $LAZYMODE_BIN (no write permission)"
+        echo "   You can run lazymode with: bash ~/.lazymode/menu.sh"
+    fi
 else
-    echo "⚠️  Could not install to $LAZYMODE_BIN (no write permission)"
+    echo "⚠️  /usr/local/bin does not exist, skipping global install"
     echo "   You can run lazymode with: bash ~/.lazymode/menu.sh"
 fi
 
