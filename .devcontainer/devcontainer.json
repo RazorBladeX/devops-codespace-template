@@ -10,8 +10,7 @@
     "ghcr.io/devcontainers/features/python:latest": {},
     "ghcr.io/devcontainers/features/node:latest": {},
     "ghcr.io/devcontainers/features/common-utils:latest": {},
-    "ghcr.io/devcontainers-extra/features/act:1": {},
-    "ghcr.io/devcontainers/features/github-actions:latest": {}
+    "ghcr.io/devcontainers-extra/features/act:1": {}
   },
   "customizations": {
     "vscode": {
