@@ -1,0 +1,119 @@
+name: Docker Build & Publish
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  schedule:
+    - cron: "0 3 * * *" # Daily at 3am UTC for cleanup
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-publish:
+    name: Build and Push Devcontainer Image
+    runs-on: ubuntu-latest
+    # Only build on push events (main branch or tags), not on schedule
+    if: github.event_name != 'schedule'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Determine image tags
+        id: tags
+        run: |
+          IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          TAGS="${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.sha }}"
+
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            TAGS="${TAGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:latest"
+          fi
+
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.ref_name }}"
+            TAGS="${TAGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${VERSION}"
+          fi
+
+          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+
+      - name: Build and push devcontainer image
+        run: |
+          IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+
+          # Build base command
+          BUILD_CMD="devcontainer build --workspace-folder . --platform linux/amd64,linux/arm64"
+
+          # Add image names based on ref
+          BUILD_CMD="${BUILD_CMD} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.sha }}"
+
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            BUILD_CMD="${BUILD_CMD} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:latest"
+          fi
+
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.ref_name }}"
+            BUILD_CMD="${BUILD_CMD} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${VERSION}"
+          fi
+
+          # Add cache and push options
+          BUILD_CMD="${BUILD_CMD} --cache-from ${{ env.REGISTRY }}/${IMAGE_NAME}:latest --push"
+
+          echo "Running: ${BUILD_CMD}"
+          eval ${BUILD_CMD}
+
+  cleanup:
+    name: Cleanup Old Package Versions
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    # Run cleanup after build, or on schedule (even if build was skipped)
+    if: always() && (needs.build-and-publish.result == 'success' || github.event_name == 'schedule')
+
+    permissions:
+      packages: write
+
+    steps:
+      - name: Delete old untagged versions
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          package-name: ${{ github.event.repository.name }}
+          package-type: container
+          min-versions-to-keep: 5
+          delete-only-untagged-versions: true
+
+      - name: Delete old tagged versions (keep recent)
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          package-name: ${{ github.event.repository.name }}
+          package-type: container
+          min-versions-to-keep: 10
+          ignore-versions: "^(latest|v\\d+\\.\\d+\\.\\d+)$"
