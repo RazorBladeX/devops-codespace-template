@@ -49,6 +49,38 @@
 | **Hadolint** | Dockerfile linting |
 | **markdownlint** | Markdown linting |
 
+## 🦥 lazymode — The Ultimate Lazy-Dev TUI Menu
+
+Just type `lazymode` to open a beautiful terminal menu with all the common developer tasks:
+
+| Option | Description |
+|--------|-------------|
+| 🎨 **Format All Files** | Run Prettier, Black, Ruff, gofmt, rustfmt, terraform fmt |
+| 🔍 **Lint & Auto-Fix** | Run ESLint, Ruff, Flake8, golangci-lint, Clippy, ShellCheck |
+| 🪝 **Run Pre-Commit** | Install hooks if missing, then run on all files |
+| 🧪 **Run Tests** | Auto-detect and run npm test, pytest, go test, cargo test |
+| 💾 **Git Commit** | Interactive conventional commit with type, scope, and description |
+| 📝 **Create Draft PR** | Create a draft pull request with title and body |
+| 📦 **Update Dependencies** | Update npm, pip, uv, go modules, cargo packages |
+| 🧹 **Clean Artifacts** | Remove node_modules, __pycache__, target, dist, build |
+| 🤖 **Copilot Explain** | Ask GitHub Copilot to explain the repository |
+| 🔧 **Copilot Fix** | Ask GitHub Copilot to suggest fixes |
+| 🔄 **Restart Codespace** | Restart the current Codespace |
+| 🌐 **Open in Browser** | Open the GitHub repository in your browser |
+| ⬆️ **Self-Update** | Update lazymode to the latest version |
+
+### Smart Project Detection
+
+lazymode automatically detects your project type (Python, Node.js, Go, Rust, Ruby, Java, Docker, Terraform) and shows relevant options based on what's in your repository.
+
+### Installation
+
+lazymode is automatically installed when the devcontainer starts. To manually install or update:
+
+```bash
+bash .lazymode/install.sh
+```
+
 ## ⚙️ Pre-configured Settings
 
 - **Auto-format on save** for all supported file types
@@ -68,6 +100,9 @@
 ├── .devcontainer/
 │   ├── devcontainer.json    # Dev container configuration
 │   └── post-create.sh       # Post-creation setup script
+├── .lazymode/
+│   ├── menu.sh              # Main lazymode TUI menu
+│   └── install.sh           # lazymode installer script
 ├── .vscode/
 │   ├── settings.json        # VS Code workspace settings
 │   └── extensions.json      # Recommended extensions
