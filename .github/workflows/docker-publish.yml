@@ -73,9 +73,15 @@ jobs:
   cleanup:
     name: Cleanup Old Package Versions
     runs-on: ubuntu-latest
+    # Run cleanup on schedule or after successful build
+    # Using 'if: always()' with no 'needs' would run immediately;
+    # we want cleanup to wait for build on push events but run immediately on schedule
     needs: build-and-publish
-    # Run cleanup unless the build job failed
-    if: always() && needs.build-and-publish.result != 'failure'
+    if: |
+      always() && (
+        github.event_name == 'schedule' ||
+        needs.build-and-publish.result == 'success'
+      )
 
     permissions:
       packages: write
