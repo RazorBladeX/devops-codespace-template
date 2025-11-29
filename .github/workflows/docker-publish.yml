@@ -46,29 +46,30 @@ jobs:
         run: npm install -g @devcontainers/cli
 
       - name: Build and push devcontainer image
+        # Note: --cache-from is optional and won't fail if the image doesn't exist
+        # On first run or when cache is unavailable, build will proceed without cache
         run: |
           IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
-          # Build base command
-          BUILD_CMD="devcontainer build --workspace-folder . --platform linux/amd64,linux/arm64"
+          # Build base command with multi-platform support
+          BUILD_ARGS="--workspace-folder . --platform linux/amd64,linux/arm64"
+          BUILD_ARGS="${BUILD_ARGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.sha }}"
 
-          # Add image names based on ref
-          BUILD_CMD="${BUILD_CMD} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.sha }}"
-
+          # Add latest tag on main branch
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            BUILD_CMD="${BUILD_CMD} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:latest"
+            BUILD_ARGS="${BUILD_ARGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:latest"
           fi
 
+          # Add version tag on tagged releases
           if [[ "${{ github.ref }}" == "refs/tags/v"* ]]; then
-            VERSION="${{ github.ref_name }}"
-            BUILD_CMD="${BUILD_CMD} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${VERSION}"
+            BUILD_ARGS="${BUILD_ARGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.ref_name }}"
           fi
 
           # Add cache and push options
-          BUILD_CMD="${BUILD_CMD} --cache-from ${{ env.REGISTRY }}/${IMAGE_NAME}:latest --push"
+          BUILD_ARGS="${BUILD_ARGS} --cache-from ${{ env.REGISTRY }}/${IMAGE_NAME}:latest --push"
 
-          echo "Running: ${BUILD_CMD}"
-          eval ${BUILD_CMD}
+          echo "Running: devcontainer build ${BUILD_ARGS}"
+          eval "devcontainer build ${BUILD_ARGS}"
 
   cleanup:
     name: Cleanup Old Package Versions
