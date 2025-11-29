@@ -10,7 +10,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 permissions:
   contents: read
@@ -42,9 +41,10 @@ jobs:
         # Note: --cache-from is optional and won't fail if the image doesn't exist
         # On first run or when cache is unavailable, build will proceed without cache
         run: |
+          IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           devcontainer build \
             --workspace-folder . \
-            --image-name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            --image-name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            --cache-from ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:latest \
+            --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.sha }} \
+            --cache-from ${{ env.REGISTRY }}/${IMAGE_NAME}:latest \
             --push
