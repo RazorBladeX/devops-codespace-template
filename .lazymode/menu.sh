@@ -405,15 +405,15 @@ update_deps() {
     # Python - pip
     if [[ -f "$REPO_ROOT/requirements.txt" ]]; then
         echo -e "${BLUE}Updating pip packages...${NC}"
-        pip install --upgrade -r requirements.txt 2>/dev/null || pip3 install --upgrade -r requirements.txt 2>/dev/null || true
+        pip install --upgrade -r requirements.txt 2>/dev/null || \
+            pip3 install --upgrade -r requirements.txt 2>/dev/null || true
         updated=true
     fi
     
-    # Python - uv
+    # Python - uv (only sync existing lock, don't overwrite requirements.txt)
     if command -v uv &>/dev/null && [[ -f "$REPO_ROOT/pyproject.toml" ]]; then
         echo -e "${BLUE}Updating with uv...${NC}"
-        uv pip compile pyproject.toml -o requirements.txt 2>/dev/null || true
-        uv pip sync requirements.txt 2>/dev/null || true
+        uv sync 2>/dev/null || uv pip install -e . 2>/dev/null || true
         updated=true
     fi
     
@@ -445,6 +445,12 @@ clean_artifacts() {
     
     local cleaned=false
     
+    # Validate REPO_ROOT is a valid directory
+    if [[ ! -d "$REPO_ROOT" ]] || [[ "$REPO_ROOT" == "/" ]]; then
+        gum style --foreground 196 "❌ Invalid repository root: $REPO_ROOT"
+        return
+    fi
+    
     # Node.js
     if [[ -d "$REPO_ROOT/node_modules" ]]; then
         echo -e "${BLUE}Removing node_modules...${NC}"
@@ -452,16 +458,21 @@ clean_artifacts() {
         cleaned=true
     fi
     
-    # Python
-    if find "$REPO_ROOT" -type d -name "__pycache__" 2>/dev/null | head -1 | grep -q .; then
+    # Python __pycache__
+    local pycache_dirs
+    pycache_dirs=$(find "$REPO_ROOT" -type d -name "__pycache__" 2>/dev/null || true)
+    if [[ -n "$pycache_dirs" ]]; then
         echo -e "${BLUE}Removing __pycache__ directories...${NC}"
-        find "$REPO_ROOT" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+        echo "$pycache_dirs" | xargs rm -rf 2>/dev/null || true
         cleaned=true
     fi
     
-    if find "$REPO_ROOT" -type d -name "*.egg-info" 2>/dev/null | head -1 | grep -q .; then
+    # Python .egg-info
+    local egg_dirs
+    egg_dirs=$(find "$REPO_ROOT" -type d -name "*.egg-info" 2>/dev/null || true)
+    if [[ -n "$egg_dirs" ]]; then
         echo -e "${BLUE}Removing .egg-info directories...${NC}"
-        find "$REPO_ROOT" -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+        echo "$egg_dirs" | xargs rm -rf 2>/dev/null || true
         cleaned=true
     fi
     
@@ -486,9 +497,11 @@ clean_artifacts() {
     fi
     
     # .DS_Store files
-    if find "$REPO_ROOT" -name ".DS_Store" 2>/dev/null | head -1 | grep -q .; then
+    local ds_files
+    ds_files=$(find "$REPO_ROOT" -name ".DS_Store" 2>/dev/null || true)
+    if [[ -n "$ds_files" ]]; then
         echo -e "${BLUE}Removing .DS_Store files...${NC}"
-        find "$REPO_ROOT" -name ".DS_Store" -delete 2>/dev/null || true
+        echo "$ds_files" | xargs rm -f 2>/dev/null || true
         cleaned=true
     fi
     
