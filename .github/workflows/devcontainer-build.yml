@@ -39,6 +39,8 @@ jobs:
         run: npm install -g @devcontainers/cli
 
       - name: Build devcontainer image
+        # Note: --cache-from is optional and won't fail if the image doesn't exist
+        # On first run or when cache is unavailable, build will proceed without cache
         run: |
           devcontainer build \
             --workspace-folder . \
