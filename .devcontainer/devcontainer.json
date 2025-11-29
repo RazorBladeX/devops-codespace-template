@@ -1,0 +1,24 @@
+{
+  "name": "DevOps Golden Template",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:latest": {},
+    "ghcr.io/devcontainers/features/terraform:latest": {},
+    "ghcr.io/devcontainers/features/github-cli:latest": {},
+    "ghcr.io/devcontainers/features/azure-cli:latest": {},
+    "ghcr.io/devcontainers/features/aws-cli:latest": {},
+    "ghcr.io/devcontainers/features/python:latest": {},
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:latest": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "hashicorp.terraform",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.azurecli",
+        "amazonwebservices.aws-toolkit-vscode"
+      ]
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}
