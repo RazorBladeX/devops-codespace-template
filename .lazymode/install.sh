@@ -18,11 +18,33 @@ cp -r "$SCRIPT_DIR"/* "$LAZYMODE_HOME/"
 chmod +x "$LAZYMODE_HOME/menu.sh"
 chmod +x "$LAZYMODE_HOME/install.sh"
 
-# Add alias to shell config files
+# Create lazymode command in /usr/local/bin for immediate availability
+LAZYMODE_BIN="/usr/local/bin/lazymode"
+echo "📦 Installing lazymode command to $LAZYMODE_BIN..."
+
+# Create wrapper script (use sudo if available and needed)
+WRAPPER_SCRIPT="#!/usr/bin/env bash
+exec bash \"\$HOME/.lazymode/menu.sh\" \"\$@\"
+"
+
+if [[ -w "/usr/local/bin" ]]; then
+    echo "$WRAPPER_SCRIPT" > "$LAZYMODE_BIN"
+    chmod +x "$LAZYMODE_BIN"
+    echo "✅ Installed lazymode command to $LAZYMODE_BIN"
+elif command -v sudo &>/dev/null; then
+    echo "$WRAPPER_SCRIPT" | sudo tee "$LAZYMODE_BIN" > /dev/null
+    sudo chmod +x "$LAZYMODE_BIN"
+    echo "✅ Installed lazymode command to $LAZYMODE_BIN (with sudo)"
+else
+    echo "⚠️  Could not install to $LAZYMODE_BIN (no write permission)"
+    echo "   You can run lazymode with: bash ~/.lazymode/menu.sh"
+fi
+
+# Add alias to shell config files (as backup/convenience)
 add_alias() {
     local rc_file="$1"
     local alias_line='alias lazymode="bash $HOME/.lazymode/menu.sh"'
-    
+
     if [[ -f "$rc_file" ]]; then
         if ! grep -q "alias lazymode=" "$rc_file" 2>/dev/null; then
             echo "" >> "$rc_file"
@@ -50,8 +72,4 @@ fi
 echo ""
 echo "✅ lazymode installed successfully!"
 echo ""
-echo "To use lazymode:"
-echo "  1. Restart your terminal or run: source ~/.bashrc (or ~/.zshrc)"
-echo "  2. Run: lazymode"
-echo ""
-echo "Or run directly: bash ~/.lazymode/menu.sh"
+echo "To use lazymode, simply run: lazymode"
