@@ -1,0 +1,80 @@
+{
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.eol": "\n",
+  "[terraform]": {
+    "editor.defaultFormatter": "hashicorp.terraform",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[terraform-vars]": {
+    "editor.defaultFormatter": "hashicorp.terraform",
+    "editor.formatOnSave": true
+  },
+  "terraform.languageServer.enable": true,
+  "terraform.validation.enableEnhancedValidation": true,
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "yaml.format.enable": true,
+  "yaml.validate": true,
+  "yaml.schemaStore.enable": true,
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format",
+    "editor.formatOnSave": true
+  },
+  "shellcheck.enable": true,
+  "shellcheck.run": "onSave",
+  "shellcheck.executablePath": "shellcheck",
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.wordWrap": "on"
+  },
+  "markdownlint.config": {
+    "MD013": false,
+    "MD033": false
+  },
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "es5",
+  "prettier.printWidth": 100,
+  "cSpell.enabled": true,
+  "gitlens.hovers.currentLine.over": "line",
+  "gitlens.codeLens.enabled": true
+}

@@ -7,7 +7,11 @@
     "ghcr.io/devcontainers/features/github-cli:latest": {},
     "ghcr.io/devcontainers/features/azure-cli:latest": {},
     "ghcr.io/devcontainers/features/aws-cli:latest": {},
-    "ghcr.io/devcontainers/features/python:latest": {}
+    "ghcr.io/devcontainers/features/python:latest": {},
+    "ghcr.io/devcontainers/features/node:latest": {},
+    "ghcr.io/devcontainers/features/common-utils:latest": {},
+    "ghcr.io/nektos/act:latest": {},
+    "ghcr.io/devcontainers/features/github-actions:latest": {}
   },
   "customizations": {
     "vscode": {
@@ -15,8 +19,68 @@
         "hashicorp.terraform",
         "ms-azuretools.vscode-docker",
         "ms-vscode.azurecli",
-        "amazonwebservices.aws-toolkit-vscode"
-      ]
+        "amazonwebservices.aws-toolkit-vscode",
+        "eamodio.gitlens",
+        "redhat.vscode-yaml",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "GitHub.copilot",
+        "GitHub.vscode-pull-request-github",
+        "streetsidesoftware.code-spell-checker",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll": "explicit"
+        },
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "files.trimFinalNewlines": true,
+        "[terraform]": {
+          "editor.defaultFormatter": "hashicorp.terraform",
+          "editor.formatOnSave": true
+        },
+        "[terraform-vars]": {
+          "editor.defaultFormatter": "hashicorp.terraform",
+          "editor.formatOnSave": true
+        },
+        "terraform.languageServer.enable": true,
+        "terraform.validation.enableEnhancedValidation": true,
+        "[yaml]": {
+          "editor.defaultFormatter": "redhat.vscode-yaml",
+          "editor.formatOnSave": true
+        },
+        "yaml.format.enable": true,
+        "yaml.validate": true,
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[shellscript]": {
+          "editor.defaultFormatter": "foxundermoon.shell-format",
+          "editor.formatOnSave": true
+        },
+        "shellcheck.enable": true,
+        "shellcheck.run": "onSave",
+        "[dockerfile]": {
+          "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+        },
+        "[markdown]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true,
+          "editor.wordWrap": "on"
+        },
+        "markdownlint.config": {
+          "MD013": false,
+          "MD033": false
+        }
+      }
     }
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh"
