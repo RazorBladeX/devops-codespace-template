@@ -26,7 +26,11 @@
         "GitHub.copilot",
         "GitHub.vscode-pull-request-github",
         "streetsidesoftware.code-spell-checker",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "foxundermoon.shell-format",
+        "timonwong.shellcheck",
+        "exiasr.hadolint",
+        "DavidAnson.vscode-markdownlint"
       ],
       "settings": {
         "editor.formatOnSave": true,
