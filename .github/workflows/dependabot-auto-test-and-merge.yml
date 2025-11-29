@@ -1,0 +1,112 @@
+name: Dependabot Auto Test and Merge
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  validate-dependabot:
+    name: Validate Dependabot PR
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    outputs:
+      build-success: ${{ steps.build.outcome == 'success' }}
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Build devcontainer
+        id: build
+        run: |
+          devcontainer build --workspace-folder .
+        continue-on-error: true
+
+      - name: Handle build failure
+        if: steps.build.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Add build-failed label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['build-failed']
+            });
+
+            // Comment with error
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: '❌ **Devcontainer Build Failed**\n\nThe devcontainer failed to build with the updated dependencies. Please review the build logs and fix any issues before merging.\n\n[View Build Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+            });
+
+            core.setFailed('Devcontainer build failed');
+
+      - name: Remove build-failed label on success
+        if: steps.build.outcome == 'success'
+        uses: actions/github-script@v7
+        continue-on-error: true
+        with:
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                name: 'build-failed'
+              });
+            } catch (e) {
+              // Label might not exist, ignore error
+            }
+
+  auto-merge:
+    name: Auto Approve and Merge
+    runs-on: ubuntu-latest
+    needs: validate-dependabot
+    if: github.actor == 'dependabot[bot]' && needs.validate-dependabot.outputs.build-success == 'true'
+
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Auto-approve PR
+        run: gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge PR
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on successful merge
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: '✅ **Auto-merge enabled**\n\nDevcontainer build succeeded. This PR has been approved and will be automatically merged once all required checks pass.'
+            });

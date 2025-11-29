@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Dev Containers ecosystem - keep features up to date
+  - package-ecosystem: "devcontainers"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "02:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "automated"
+      - "devcontainer"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+
+  # GitHub Actions ecosystem - keep workflows up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "02:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "automated"
+      - "github-actions"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
