@@ -1,0 +1,115 @@
+name: Docker Build & Publish
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  schedule:
+    - cron: "0 3 * * *" # Daily at 3am UTC for cleanup
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-publish:
+    name: Build and Push Devcontainer Image
+    runs-on: ubuntu-latest
+    # Only build on push events (main branch or tags), not on schedule
+    if: github.event_name != 'schedule'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # QEMU is required for cross-platform builds (linux/amd64 + linux/arm64)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Build and push devcontainer image
+        # Note: --cache-from is optional and won't fail if the image doesn't exist
+        # On first run or when cache is unavailable, build will proceed without cache
+        run: |
+          IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+
+          # Build base command with multi-platform support
+          BUILD_ARGS="--workspace-folder . --platform linux/amd64,linux/arm64"
+          BUILD_ARGS="${BUILD_ARGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.sha }}"
+
+          # Add latest tag on main branch
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            BUILD_ARGS="${BUILD_ARGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:latest"
+          fi
+
+          # Add version tag on tagged releases
+          if [[ "${{ github.ref }}" == "refs/tags/v"* ]]; then
+            BUILD_ARGS="${BUILD_ARGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.ref_name }}"
+          fi
+
+          # Add cache and push options
+          BUILD_ARGS="${BUILD_ARGS} --cache-from ${{ env.REGISTRY }}/${IMAGE_NAME}:latest --push"
+
+          echo "Running: devcontainer build ${BUILD_ARGS}"
+          eval "devcontainer build ${BUILD_ARGS}"
+
+  cleanup:
+    name: Cleanup Old Package Versions
+    runs-on: ubuntu-latest
+    # Run cleanup on schedule or after successful build
+    # Using 'if: always()' with no 'needs' would run immediately;
+    # we want cleanup to wait for build on push events but run immediately on schedule
+    needs: build-and-publish
+    if: |
+      always() && (
+        github.event_name == 'schedule' ||
+        needs.build-and-publish.result == 'success'
+      )
+
+    permissions:
+      packages: write
+
+    steps:
+      - name: Get package name
+        id: package
+        run: |
+          # Extract repo name from github.repository (owner/repo -> repo)
+          REPO="${{ github.repository }}"
+          PACKAGE_NAME="${REPO##*/}"
+          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Delete old untagged versions
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: ${{ github.repository_owner }}
+          package-name: ${{ steps.package.outputs.name }}
+          package-type: container
+          min-versions-to-keep: 5
+          delete-only-untagged-versions: true
+
+      - name: Delete old versions (keep latest and recent tags)
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: ${{ github.repository_owner }}
+          package-name: ${{ steps.package.outputs.name }}
+          package-type: container
+          min-versions-to-keep: 10
+          ignore-versions: "^latest$"
