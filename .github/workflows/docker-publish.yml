@@ -73,22 +73,17 @@ jobs:
     name: Cleanup Old Package Versions
     runs-on: ubuntu-latest
     needs: build-and-publish
-    # Run cleanup after build, or on schedule (even if build was skipped)
-    if: always() && (needs.build-and-publish.result == 'success' || github.event_name == 'schedule')
+    # Run cleanup after build succeeds, skips (scheduled), or on workflow_dispatch
+    if: always() && (needs.build-and-publish.result == 'success' || needs.build-and-publish.result == 'skipped' || github.event_name == 'workflow_dispatch')
 
     permissions:
       packages: write
-
-    env:
-      # Extract repository name from github.repository (owner/repo -> repo)
-      PACKAGE_NAME: ${{ github.event.repository.name || github.repository }}
 
     steps:
       - name: Get package name
         id: package
         run: |
-          # For scheduled events, github.event.repository.name might be empty
-          # Use github.repository and extract the repo name
+          # Extract repo name from github.repository (owner/repo -> repo)
           REPO="${{ github.repository }}"
           PACKAGE_NAME="${REPO##*/}"
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
