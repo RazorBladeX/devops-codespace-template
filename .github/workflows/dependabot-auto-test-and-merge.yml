@@ -1,5 +1,13 @@
 name: Dependabot Auto Test and Merge
 
+# Security Note: This workflow uses pull_request_target to allow auto-merge of Dependabot PRs.
+# This is safe because:
+# 1. The workflow only runs for github.actor == 'dependabot[bot]'
+# 2. Dependabot is a trusted GitHub service that only updates version numbers
+# 3. Path filtering restricts to devcontainer and workflow files only
+# 4. Checkout uses persist-credentials: false
+# See: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
