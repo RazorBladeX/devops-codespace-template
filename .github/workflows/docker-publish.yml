@@ -44,24 +44,6 @@ jobs:
       - name: Install devcontainer CLI
         run: npm install -g @devcontainers/cli
 
-      - name: Determine image tags
-        id: tags
-        run: |
-          IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          TAGS="${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.sha }}"
-
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            TAGS="${TAGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:latest"
-          fi
-
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            VERSION="${{ github.ref_name }}"
-            TAGS="${TAGS} --image-name ${{ env.REGISTRY }}/${IMAGE_NAME}:${VERSION}"
-          fi
-
-          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-
       - name: Build and push devcontainer image
         run: |
           IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
@@ -97,23 +79,34 @@ jobs:
     permissions:
       packages: write
 
+    env:
+      # Extract repository name from github.repository (owner/repo -> repo)
+      PACKAGE_NAME: ${{ github.event.repository.name || github.repository }}
+
     steps:
+      - name: Get package name
+        id: package
+        run: |
+          # For scheduled events, github.event.repository.name might be empty
+          # Use github.repository and extract the repo name
+          REPO="${{ github.repository }}"
+          PACKAGE_NAME="${REPO##*/}"
+          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+
       - name: Delete old untagged versions
         uses: actions/delete-package-versions@v5
         with:
           owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-          package-name: ${{ github.event.repository.name }}
+          package-name: ${{ steps.package.outputs.name }}
           package-type: container
           min-versions-to-keep: 5
           delete-only-untagged-versions: true
 
-      - name: Delete old tagged versions (keep recent)
+      - name: Delete old versions (keep latest and recent tags)
         uses: actions/delete-package-versions@v5
         with:
           owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-          package-name: ${{ github.event.repository.name }}
+          package-name: ${{ steps.package.outputs.name }}
           package-type: container
           min-versions-to-keep: 10
-          ignore-versions: "^(latest|v\\d+\\.\\d+\\.\\d+)$"
+          ignore-versions: "^latest$"
